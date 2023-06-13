@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Product, ImageProduct, ImageCollection, Collection, Menu, Size, Category
+from .models import Product, ImageProduct, ImageCollection, Collection, Menu, Size, Category, Instruction
 
 
 class MenuSerializers(serializers.ModelSerializer):
@@ -48,13 +48,19 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'menu_item']
 
+class InstructionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instruction
+        fields = '__all__'
+
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True)
     collection = CollectionSerializer()
     category = CategorySerializer()
+    instructions = InstructionSerializer
     size = SizeSerializers()
     
     class Meta:
         model = Product
-        fields = ['id', 'collection', 'product_name','price',                    'size', 'delivery_info', 'sku', 'model_parameters' , 'size_on_the_model', 'description', 'images' , 'instructions', 'category', 'quantity'] 
+        fields = ['id', 'collection', 'product_name','price',           'size', 'delivery_info', 'sku', 'model_parameters' , 'size_on_the_model', 'description', 'images' , 'instructions', 'category', 'quantity'] 
