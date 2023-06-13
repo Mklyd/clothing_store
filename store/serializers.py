@@ -58,7 +58,7 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True)
     collection = CollectionSerializer()
     category = CategorySerializer()
-    instructions = InstructionSerializer
+    instructions = InstructionSerializer()
     size = SizeSerializers()
     
     class Meta:
