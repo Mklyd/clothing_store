@@ -92,16 +92,6 @@ class ImageProduct(models.Model):
     image_tag.short_description = 'Image'
 
 
-class Instruction(models.Model):
-    details = models.TextField(null=True, verbose_name='Состав ткани')
-    care = models.TextField(verbose_name='Уход')
-
-    
-    class Meta:
-        verbose_name_plural = 'Состав и уход'
-        verbose_name = 'Состав и уход'
-
-
 class Size(models.Model):
     CHOICES = (
         ('XS', 'XS'),
@@ -121,8 +111,8 @@ class Size(models.Model):
         verbose_name_plural = 'Размеры одежды'
         verbose_name = 'Размер одежды'
 
-    def __str__(self) -> str:
-        return self.get_name_display()
+    def __str__(self):
+        return self.name
     
 
 class Product(models.Model):
@@ -136,7 +126,8 @@ class Product(models.Model):
     size_on_the_model = models.CharField(max_length=10, verbose_name='размер на модели')
     description = models.TextField(verbose_name='Описание', blank=False)
     images = models.ManyToManyField('ImageProduct', verbose_name='Изображание товара')
-    instructions = models.ForeignKey('Instruction', on_delete=models.CASCADE, verbose_name='Состав и уход')
+    details = models.TextField(verbose_name='Состав ткани')
+    care = models.TextField(verbose_name='Уход')
     category = models.ForeignKey('Category', on_delete=models.CASCADE, null=True, verbose_name='Категория')
     quantity = models.PositiveIntegerField(null=True, verbose_name='Количество товара')
 

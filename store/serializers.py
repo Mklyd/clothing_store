@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Product, ImageProduct, ImageCollection, Collection, Menu, Size, Category, Instruction
+from .models import Product, ImageProduct, ImageCollection, Collection, Menu, Size, Category
 
 
 class MenuSerializers(serializers.ModelSerializer):
@@ -12,16 +12,6 @@ class MenuSerializers(serializers.ModelSerializer):
 
     def get_name(self, obj):
         return dict(Menu.CHOICES).get(obj.name)
-
-class SizeSerializers(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Size
-        fields = ['name']
-
-    def get_name(self, obj):
-        return dict(Size.CHOICES).get(obj.name)
     
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,19 +38,24 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'menu_item']
 
-class InstructionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Instruction
-        fields = '__all__'
-
+class SizeChoiceField(serializers.MultipleChoiceField):
+    def to_representation(self, value):
+        return [size.get_name_display() for size in value.all()]
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True)
     collection = CollectionSerializer()
     category = CategorySerializer()
-    instructions = InstructionSerializer()
-    size = SizeSerializers()
+    instructions = serializers.SerializerMethodField()
+    size = SizeChoiceField(choices=Size.CHOICES, allow_blank=True, allow_null=True)
     
     class Meta:
         model = Product
-        fields = ['id', 'collection', 'product_name','price',           'size', 'delivery_info', 'sku', 'model_parameters' , 'size_on_the_model', 'description', 'images' , 'instructions', 'category', 'quantity'] 
+        fields = ['id', 'collection', 'product_name','price', 'size', 'delivery_info', 'sku', 'model_parameters' , 'size_on_the_model', 'description', 'images' , 'instructions', 'category', 'quantity'] 
+    
+    def get_instructions(self, obj):
+        instructions = {
+            'details': obj.details,
+            'care': obj.care
+        }
+        return instructions
