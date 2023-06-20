@@ -25,7 +25,7 @@ class Menu(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=255, verbose_name='Имя категории')
-    menu_item = models.ForeignKey('Menu', on_delete=models.CASCADE, verbose_name='Название элемента меню')
+    menu_item = models.ManyToManyField('Menu', verbose_name='Название элемента меню', related_name='menu_item')
 
 
     class Meta:
@@ -45,14 +45,6 @@ class ImageCollection(models.Model):
 
     def __str__(self):
         return self.image.url
-    
-    def image_tag(self):
-        if self.image:
-            return mark_safe('<img src="%s" style="width: 105px; height:105px;" />' % self.image.url)
-        else:
-            return 'No Image Found'
-
-    image_tag.short_description = 'Image'
 
 
 class Collection(models.Model):
@@ -82,7 +74,7 @@ class ImageProduct(models.Model):
 
     def __str__(self):
         return self.image.url
-    
+
     def image_tag(self):
         if self.image:
             return mark_safe('<img src="%s" style="width: 105px; height:105px;" />' % self.image.url)
@@ -111,9 +103,10 @@ class Size(models.Model):
         verbose_name_plural = 'Размеры одежды'
         verbose_name = 'Размер одежды'
 
+
     def __str__(self):
         return self.name
-    
+
 
 class Product(models.Model):
     collection = models.ForeignKey('Collection', verbose_name='Название коллекции', blank=False, on_delete=models.CASCADE, null=True )
@@ -126,10 +119,11 @@ class Product(models.Model):
     size_on_the_model = models.CharField(max_length=10, verbose_name='размер на модели')
     description = models.TextField(verbose_name='Описание', blank=False)
     images = models.ManyToManyField('ImageProduct', verbose_name='Изображание товара')
-    details = models.TextField(verbose_name='Состав ткани')
-    care = models.TextField(verbose_name='Уход')
-    category = models.ForeignKey('Category', on_delete=models.CASCADE, null=True, verbose_name='Категория')
+    details = models.TextField(verbose_name='Состав ткани', null=True)
+    care = models.TextField(verbose_name='Уход', null=True)
+    category = models.ManyToManyField('Category', null=True, verbose_name='Категория')
     quantity = models.PositiveIntegerField(null=True, verbose_name='Количество товара')
+    date = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True, null=True)
 
 
     class Meta:
@@ -138,11 +132,11 @@ class Product(models.Model):
 
     def __str__(self) -> str:
         return self.product_name
-    
+
     def delete(self, *args, **kwargs):
             # Delete associated images from the filesystem
             for image in self.images.all():
                 image.image.delete()
-            
+
             # Call the superclass delete() method to complete the deletion process
             super().delete(*args, **kwargs)
