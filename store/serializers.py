@@ -1,63 +1,158 @@
 from rest_framework import serializers
 
-from .models import Product, ImageProduct, ImageCollection, Collection, Menu, Size, Category
+from .models import Product, ProductImage, ImageCollection, Collection, Menu, Size, Category, ProductColor, Color
 
-
-class ImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ImageProduct
-        fields = '__all__'
 
 
 class ImageCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImageCollection
-        fields = ['id', 'image']
-
+        fields = ['id', 'image_url']
+    def get_image(self, obj):
+        if 'request' in self.context:
+            request = self.context['request']
+            image_url = obj.image_url.url
+            return request.build_absolute_uri(image_url)
+        return None
 
 class CollectionSerializer(serializers.ModelSerializer):
-    images = ImageCollectionSerializer(many=True)
+    images = ImageCollectionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Collection
-        fields = ['id', 'name', 'description', 'images', 'video_url']
+        fields = ['id', 'collection_name', 'description', 'images', 'video_url']
     
 
-class CategorySerializer(serializers.ModelSerializer):
-    menu_item = serializers.StringRelatedField(many=True)
+class CollectionNameSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        first_image = obj.images.first()
+        first_image_serializer = ImageProductSerializer(first_image, context={'request': self.context.get('request')})
+        return first_image_serializer.data['image_url']
+        
+    class Meta:
+        model = Collection
+        fields = ['id', 'image', 'collection_name']
+
     
+
+class CategorySerializer(serializers.ModelSerializer):   
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ['id', 'category_name']
+
 
 class MenuSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    categories = serializers.StringRelatedField(many=True, source='menu_item')
-    
+    menu_name = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
+
     class Meta:
         model = Menu
-        fields = ['name', 'categories']
-        
+        fields = ['id', 'menu_name', 'categories']
 
-    def get_name(self, obj):
-        return dict(Menu.CHOICES).get(obj.name)
+    def get_menu_name(self, obj):
+        return dict(Menu.CHOICES).get(obj.menu_name)
+
+    def get_categories(self, obj):
+        categories = obj.menu_item.all()
+        return [{'id': category.id, 'name': category.category_name} for category in categories]
 
 
 class SizeChoiceField(serializers.MultipleChoiceField):
     def to_representation(self, value):
         return [size.get_name_display() for size in value.all()]
+    
+
+class ImageProductSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductImage
+        fields = '__all__'
+
+    def get_image_url(self, obj):
+        if 'request' in self.context:
+            request = self.context['request']
+            image_url = obj.image_url.url
+            return request.build_absolute_uri(image_url)
+        return None
+    
+
+class SizeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Size
+        fields = ['id', 'name', 'quantity']
+        
+    
 
 
-class ProductSerializer(serializers.ModelSerializer):
-    images = ImageSerializer(many=True, read_only=True)
-    collection = CollectionSerializer()
-    category = CategorySerializer(many=True)
-    instructions = serializers.SerializerMethodField()
-    size = SizeChoiceField(choices=Size.CHOICES, allow_blank=True, allow_null=True)
+class ColorSerializer(serializers.ModelSerializer):
+    images = ImageProductSerializer(many=True)
+
+    class Meta:
+        model = Color
+        fields = ['id', 'color_hex', 'color_name', 'images']
+
+
+class ProductColorSerializer(serializers.ModelSerializer): 
+    color = ColorSerializer()
+    size = SizeSerializer(many=True)  # Используйте size.get_name_display()    
+    class Meta:
+        model = ProductColor
+        fields = ['id', 'color', 'size']
+
+
+class RelatedProductSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    collection_name = serializers.CharField(source='collection.collection_name', read_only=True)
+
+    def get_image(self, obj):
+        first_image = obj.colors.first()
+        first_image = first_image.images.first()
+        first_image_serializer = ImageProductSerializer(first_image, context={'request': self.context.get('request')})
+        return first_image_serializer.data['image_url']
+        
+    class Meta:
+        model = Product
+        fields = ['id', 'image', 'collection_name', 'product_name', 'price']
+   
+
+class ProductNameSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    collection_name = serializers.CharField(source='collection.collection_name', read_only=True)
+
+    def get_image(self, obj):
+        first_image = obj.colors.first()
+        first_image = first_image.images.first()
+        first_image_serializer = ImageProductSerializer(first_image, context={'request': self.context.get('request')})
+        return first_image_serializer.data['image_url']
     
     class Meta:
         model = Product
-        fields = ['id', 'collection', 'product_name','price', 'size', 'delivery_info', 'sku', 'model_parameters' , 'size_on_the_model', 'description', 'images' , 'instructions', 'category', 'quantity', 'date'] 
+        fields = ['id', 'image','collection_name', 'product_name', 'price']
+
+class ProductSerializer(serializers.ModelSerializer):
+    colors = ProductColorSerializer(source='productcolors', many=True)
+    collection = CollectionSerializer()
+    category = CategorySerializer(many=True)
+    instructions = serializers.SerializerMethodField()
+
+    views = serializers.SerializerMethodField()
+    related_products = RelatedProductSerializer(many=True, read_only=True)
+
+
+    def get_views(self, obj):
+        # Получение количества просмотров с учетом уникальных IP-адресов
+        return obj.views.values('ip').distinct().count() 
+    def get_images(self, obj):
+        return ImageProductSerializer(obj.images.all(), many=True).data
+
+    class Meta:
+        model = Product
+        fields = ['id', 'collection', 'product_name','price', 'delivery_info', 'sku', 'model_parameters' , 'size_on_the_model', 'description', 'colors' , 'instructions', 'category', 'quantity','related_products', 'date', 'views'] 
+    
     
     def get_instructions(self, obj):
         instructions = {
@@ -66,9 +161,13 @@ class ProductSerializer(serializers.ModelSerializer):
         }
         return instructions
 
+
 class HomePageSerializer(serializers.Serializer):
     latest_collections = CollectionSerializer(many=True)  # Сериализатор для последних коллекций
     categories = CategorySerializer(many=True)  # Сериализатор для категорий с продуктами
 
     class Meta:
         fields = ['latest_collections', 'categories']
+
+
+
