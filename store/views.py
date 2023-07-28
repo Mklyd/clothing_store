@@ -1,5 +1,5 @@
 from rest_framework import viewsets, filters
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend, ModelMultipleChoiceFilter
 from django_filters import FilterSet, CharFilter, Filter
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -58,59 +58,41 @@ class ColorFilter(Filter):
             return qs.filter(**{f"{self.field_name}__in": colors})
         return qs
 
+    
 class ProductFilter(FilterSet):
-    color = ColorFilter(field_name='colors__color_hex', lookup_expr='iexact', label='Цвет')
-    size = SizeFilter(field_name='colors__size__name', lookup_expr='in')
-    menu = CharFilter(method='filter_by_menu')
-    product_name = CharFilter(field_name='product_name', lookup_expr='icontains', label='Имя продукта')
-
+    category_name = CharFilter(field_name='category__category_name', lookup_expr='icontains')
     class Meta:
         model = Product
-        fields = ['category', 'collection', 'color', 'size', 'menu', 'product_name']
+        fields = {
+            'productcolors__size__name': ['exact'],  # Filtering based on size
+            'productcolors__color__color_name': ['exact'],  # Filtering based on color
+            'product_name': ['icontains'],  # Filtering based on product_name
+            'collection__collection_name': ['icontains'],  # Filtering based on collection_name
+            'category__menu_item__menu_name': ['exact']
+        }
+    
+   
 
-    def filter_by_menu(self, queryset, name, value):
-        return queryset.filter(category__menu_item__menu_name=value).order_by('category__menu_item')
-
-    def filter_by_name(self, queryset, name, value):
-        return queryset.filter(product_name__icontains=value)
-
-
-        
 class ProductViewSet(viewsets.ModelViewSet):
-    pagination_class = MyCustomPagination
-    queryset = Product.objects.all().select_related('collection').prefetch_related('category', 'colors')
-    serializer_class = ProductSerializer
+    queryset = Product.objects.all()
+    serializer_class = ProductNameSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['product_name', 'description', 'model_parameters', 'details', 'care']
+    ordering_fields = ['price', 'date']
     filterset_class = ProductFilter
-    ordering_fields = ['price', 'date', 'views']
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())  # Фильтрация данных
-
-        product_name = self.request.query_params.get('product_name')
-        if product_name:
-            queryset = queryset.filter(product_name__icontains=product_name)
-
-        all_product = Product.objects.all().prefetch_related('colors')
-        all_product_serializer = ProductNameSerializer(all_product, many=True, context={'request': request})
-        
-        return Response(all_product_serializer.data)
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-
-        menu_name = self.request.query_params.get('menu_name')
-
-        if menu_name:
-            # Фильтрация продуктов по принадлежности категорий к указанному элементу меню
-            queryset = queryset.filter(category__menu_item__name=menu_name)
+        queryset = Product.objects.all()
 
         min_price = self.request.query_params.get('min_price')
         max_price = self.request.query_params.get('max_price')
-        if min_price and max_price:
+
+        if min_price is not None and max_price is not None:
             queryset = queryset.filter(price__range=(min_price, max_price)).order_by('price')
-        elif max_price and min_price:
-            queryset = queryset.filter(price__range=(max_price, min_price)).order_by('-price')
+        elif max_price is not None:
+            queryset = queryset.filter(price__lte=max_price).order_by('-price')
+        elif min_price is not None:
+            queryset = queryset.filter(price__gte=min_price).order_by('price')
 
         ordering = self.request.query_params.get('ordering')
         if ordering == 'views_count':
