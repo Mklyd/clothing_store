@@ -6,7 +6,7 @@ from colorfield.fields import ColorField
 
 
 class Menu(models.Model):
-    CHOICES = CHOICES = (
+    CHOICES = (
         ('women', 'Женщинам'),
         ('men', 'Мужчинам'),
         ('hajj', 'Для Хаджа и Умры'),
@@ -14,6 +14,7 @@ class Menu(models.Model):
     )
     menu_name = models.CharField( max_length=255, choices=CHOICES, unique=True, verbose_name='Имя пункта меню')
     show_menu = models.BooleanField(default=True, verbose_name='Включить в меню')
+ 
 
     class Meta:
         verbose_name_plural = 'Меню'
@@ -104,9 +105,9 @@ class Color(models.Model):
 
     color_name = models.CharField(max_length=255, verbose_name='Название цвета', null=True)
     color_hex = models.CharField(choices=COLOR_CHOICES, verbose_name='Цвет', max_length=255)
-    images = models.ManyToManyField('ProductImage', verbose_name='Изображения товара')
 
-
+    def __str__(self):
+        return self.color_name
 
 
 class Size(models.Model):
@@ -128,8 +129,8 @@ class Size(models.Model):
         verbose_name_plural = 'Размеры одежды'
         verbose_name = 'Размер одежды'
  
-    
-
+    def __str__(self):
+        return self.name
 
 class ProductView(models.Model):
     ip = models.GenericIPAddressField()
@@ -173,6 +174,7 @@ class Product(models.Model):
 class ProductColor(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productcolors')
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    images = models.ManyToManyField('ProductImage', verbose_name='Изображения товара')
     size = models.ManyToManyField(Size)
 
     class Meta:

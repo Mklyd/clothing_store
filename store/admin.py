@@ -16,7 +16,7 @@ admin.site.register(Color)
 class ProductColorInline(admin.TabularInline):
     model = ProductColor
     extra = 1
-
+    filter_horizontal = ('size', )
 
 @admin.register(Size)
 class SizeAdmin(admin.ModelAdmin):
@@ -29,6 +29,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ['category', 'collection']
     search_fields = ('product_name__startswith', )
     exclude = ['views']
+    filter_vertical = ('colors', 'category')
     inlines = [ProductColorInline]
 
 

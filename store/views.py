@@ -80,6 +80,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     search_fields = ['product_name', 'description', 'model_parameters', 'details', 'care']
     ordering_fields = ['price', 'date']
     filterset_class = ProductFilter
+    
 
     def get_queryset(self):
         queryset = Product.objects.all()

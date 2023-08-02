@@ -34,7 +34,6 @@ class CollectionNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = ['id', 'image', 'collection_name']
-
     
 
 class CategorySerializer(serializers.ModelSerializer):   
@@ -80,58 +79,55 @@ class ImageProductSerializer(serializers.ModelSerializer):
     
 
 class SizeSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Size
         fields = ['id', 'name', 'quantity']
         
     
-
-
 class ColorSerializer(serializers.ModelSerializer):
-    images = ImageProductSerializer(many=True)
-
     class Meta:
         model = Color
-        fields = ['id', 'color_hex', 'color_name', 'images']
+        fields = ['id', 'color_hex', 'color_name']
 
-
+    
+    
 class ProductColorSerializer(serializers.ModelSerializer): 
     color = ColorSerializer()
-    size = SizeSerializer(many=True)  # Используйте size.get_name_display()    
+    size = SizeSerializer(many=True)
+    images = ImageProductSerializer( many=True) 
     class Meta:
         model = ProductColor
-        fields = ['id', 'color', 'size']
+        fields = ['id', 'color', 'images', 'size']
 
 
 class RelatedProductSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
     collection_name = serializers.CharField(source='collection.collection_name', read_only=True)
+    image = serializers.SerializerMethodField()
 
-    def get_image(self, obj):
-        first_image = obj.colors.first()
-        first_image = first_image.images.first()
-        first_image_serializer = ImageProductSerializer(first_image, context={'request': self.context.get('request')})
-        return first_image_serializer.data['image_url']
-        
     class Meta:
         model = Product
-        fields = ['id', 'image', 'collection_name', 'product_name', 'price']
-   
+        fields = ['id', 'collection_name', 'product_name', 'price', 'image']
+
+    def get_image(self, obj):
+        first_image = obj.productcolors.first().images.first() if obj.productcolors.exists() else None
+        if first_image:
+            return first_image.image_url.url
+        return None
 
 class ProductNameSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
     collection_name = serializers.CharField(source='collection.collection_name', read_only=True)
+    image = serializers.SerializerMethodField()
 
-    def get_image(self, obj):
-        first_image = obj.colors.first()
-        first_image = first_image.images.first()
-        first_image_serializer = ImageProductSerializer(first_image, context={'request': self.context.get('request')})
-        return first_image_serializer.data['image_url']
-    
     class Meta:
         model = Product
-        fields = ['id', 'image','collection_name', 'product_name', 'price']
+        fields = ['id', 'image', 'collection_name', 'product_name', 'price', ]
+
+    def get_image(self, obj):
+        first_image = obj.productcolors.first().images.first() if obj.productcolors.exists() else None
+        if first_image:
+            return first_image.image_url.url
+        return None
+
 
 class ProductSerializer(serializers.ModelSerializer):
     colors = ProductColorSerializer(source='productcolors', many=True)
@@ -146,8 +142,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_views(self, obj):
         # Получение количества просмотров с учетом уникальных IP-адресов
         return obj.views.values('ip').distinct().count() 
-    def get_images(self, obj):
-        return ImageProductSerializer(obj.images.all(), many=True).data
+    
 
     class Meta:
         model = Product
