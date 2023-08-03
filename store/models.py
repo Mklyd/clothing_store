@@ -143,7 +143,7 @@ class Product(models.Model):
     delivery_info = models.TextField(verbose_name='Информация о доставке')
     sku = models.CharField(max_length=50, verbose_name='Артикул', blank=False)
     model_parameters = models.CharField(max_length=255, verbose_name='Параметры модели')
-    size_on_the_model = models.CharField(max_length=10, verbose_name='размер на модели')
+    size_on_the_model = models.CharField(max_length=10, verbose_name='Размер на модели', blank=True)
     description = models.TextField(verbose_name='Описание', blank=False)
     colors = models.ManyToManyField(Color, through='ProductColor', related_name='products')
     details = models.TextField(verbose_name='Состав ткани', null=True)

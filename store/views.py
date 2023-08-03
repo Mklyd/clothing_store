@@ -1,11 +1,9 @@
 from rest_framework import viewsets, filters
-from django_filters.rest_framework import DjangoFilterBackend, ModelMultipleChoiceFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter, Filter
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
-from django import forms
-from rest_framework.decorators import action
 from django.db.models import Count
 
 from .models import Product, Collection, Menu, ProductColor, Size, Category, ProductView, Color
