@@ -3,3 +3,4 @@ store/migrations
 store/__pycache__
 __pycache__
 db.sqlite3
+.env
