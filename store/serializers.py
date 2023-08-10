@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Product, ProductImage, ImageCollection, Collection, Menu, Size, Category, ProductColor, Color
+from .models import Product, ProductImage, ImageCollection, Collection, Menu, Size, Category, ProductColor, Color, Order
 
 
 
@@ -81,7 +81,7 @@ class ImageProductSerializer(serializers.ModelSerializer):
 class SizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Size
-        fields = ['id', 'name', 'quantity']
+        fields = ['id', 'name']
         
     
 class ColorSerializer(serializers.ModelSerializer):
@@ -97,7 +97,7 @@ class ProductColorSerializer(serializers.ModelSerializer):
     images = ImageProductSerializer( many=True) 
     class Meta:
         model = ProductColor
-        fields = ['id', 'color', 'images', 'size']
+        fields = ['id', 'color', 'images', 'size', 'quantity']
 
 
 class RelatedProductSerializer(serializers.ModelSerializer):
@@ -166,3 +166,7 @@ class HomePageSerializer(serializers.Serializer):
 
 
 
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'

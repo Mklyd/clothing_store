@@ -6,8 +6,8 @@ from rest_framework.pagination import PageNumberPagination
 
 from django.db.models import Count
 
-from .models import Product, Collection, Menu, ProductColor, Size, Category, ProductView, Color
-from .serializers import ProductSerializer, CollectionSerializer, MenuSerializer, CategorySerializer, HomePageSerializer, RelatedProductSerializer, CollectionNameSerializer, ProductNameSerializer, ProductColorSerializer
+from .models import Product, Collection, Menu, ProductColor, Size, Category, ProductView, Color, Order
+from .serializers import ProductSerializer, CollectionSerializer, MenuSerializer, CategorySerializer, HomePageSerializer, RelatedProductSerializer, CollectionNameSerializer, ProductNameSerializer, ProductColorSerializer, OrderSerializer
 class MyCustomPagination(PageNumberPagination):
     page_size = 9  # Количество элементов на одной странице
     page_size_query_param = 'page_size'  # Параметр запроса для указания количества элементов на странице
@@ -21,6 +21,10 @@ class ColorAndSizesViewSet(viewsets.ViewSet):
             'sizes': list(size)
         }
         return Response(data)
+    
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
 
 class ProductColorViewSet(viewsets.ModelViewSet):
     serializer_class = ProductColorSerializer
@@ -173,3 +177,107 @@ class HomePageViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
+# shop/views.py
+
+import uuid
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from yookassa import Configuration, Payment
+from .models import Order, OrderItem
+
+# shop/views.py
+import random
+import string
+
+def generate_order_number():
+    # Генерируем случайный номер, состоящий из букв и цифр
+    letters_and_digits = string.ascii_uppercase + string.digits
+    order_number = ''.join(random.choice(letters_and_digits) for _ in range(10))
+    return order_number
+
+# shop/views.py
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from yookassa import Configuration, Payment
+
+from .models import Order, OrderItem, Product
+
+class YookassaPaymentCreateAPIView(APIView):
+    def post(self, request, format=None):
+        if request.user.is_authenticated:
+            user = request.user
+        else:
+            user = None
+
+        product_data_list = request.data.get("products", [])
+        order_items = []
+        total_amount = 0
+        
+        # Создание заказа с автоматическим номером и суммой
+        order_number = generate_order_number()
+        if user is None:
+            order = Order.objects.create(status='created', amount=total_amount, order_number=order_number)
+        else:
+            order = Order.objects.create(user=user, status='created', amount=total_amount, order_number=order_number)
+
+        # Обработка данных о продуктах
+        for product_data in product_data_list:
+            product_id = product_data.get("product_id")
+            quantity = product_data.get("quantity")
+            colors = product_data.get("colors", [])
+            sizes = product_data.get("sizes", [])
+            price = product_data.get("price")
+
+            if product_id is None or quantity is None:
+                return Response({"error": "Некорректные данные продукта"}, status=400)
+
+            try:
+                product = Product.objects.get(pk=product_id)
+                product_amount = price * quantity
+                total_amount += product_amount
+                order_item = OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=quantity,
+                )
+                
+                # Добавление цветов к элементу заказа
+                for color_id in colors:
+                    color = Color.objects.get(pk=color_id)
+                    order_item.colors.add(color)
+                
+                # Добавление размера к элементу заказа, если указан
+                for size_id in sizes:
+                    size = Size.objects.get(pk=size_id)
+                    order_item.sizes.add(size)
+                if size:
+                    order_item.size = size
+                    
+                order_item.save()
+                order_items.append(order_item)
+
+            except Product.DoesNotExist:
+                return Response({"error": "Продукт с ID {} не найден".format(product_id)}, status=400)
+        order.amount = total_amount
+        order.save()
+        Configuration.account_id = settings.YOOKASSA_ACCOUNT_ID
+        Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
+
+        payment = Payment.create({
+            "amount": {
+                "value": str(total_amount),
+                "currency": "RUB"
+            },
+            "confirmation": {
+                "type": "redirect",
+                "return_url": "https://www.example.com/return_url"
+            },
+            "description": "Оплата заказа №" + str(order.id)
+        })
+
+        confirmation_url = payment.confirmation.confirmation_url
+
+        return Response({"confirmation_url": confirmation_url})

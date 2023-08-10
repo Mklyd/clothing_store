@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.safestring import mark_safe
-
+from profiles_app.models import Profile
 
 from colorfield.fields import ColorField
 
@@ -123,7 +123,6 @@ class Size(models.Model):
     )
 
     name = models.CharField(max_length=255, choices=CHOICES,  verbose_name='Размер')
-    quantity = models.PositiveIntegerField(null=True, verbose_name='Количество товара')
 
     class Meta:
         verbose_name_plural = 'Размеры одежды'
@@ -176,6 +175,7 @@ class ProductColor(models.Model):
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     images = models.ManyToManyField('ProductImage', verbose_name='Изображения товара')
     size = models.ManyToManyField(Size)
+    quantity = models.PositiveIntegerField(null=True, verbose_name='Количество товара')
 
     class Meta:
         verbose_name_plural = 'Изображение и цвет товаров'
@@ -192,3 +192,39 @@ class ProductColor(models.Model):
             return 'No Image Found'
 
     image_tag.short_description = 'Image'
+
+
+class Order(models.Model):
+    CHOICES_ORDER = (
+        ('Paid', 'Оплачено'),
+        ('Being assembled by the seller', 'В сборке у продавца'),
+        ('Shipped', 'Передано в доставку'),
+        ('Handed over to the courier', 'Передано курьеру '),
+        ('Awaiting pickup', 'Ожидает в пункте выдачи'),
+        ('Received', 'Получено'),
+    )
+
+    order_number = models.CharField(max_length=10, unique=True, editable=False, null=True)  
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True, blank=True)
+    products = models.ManyToManyField(Product, through='OrderItem')
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=100, choices=CHOICES_ORDER, default='created')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    colors = models.ManyToManyField(Color, verbose_name='Цвета', blank=True)
+    sizes = models.ManyToManyField(Size, verbose_name='Размеры', blank=True)
+
+
+    def subtotal(self):
+        return self.product.price * self.quantity
+
+class Payment(models.Model):
+    order = models.OneToOneField(Order, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=100)
+    payment_date = models.DateTimeField(auto_now_add=True)

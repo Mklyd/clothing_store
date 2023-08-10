@@ -3,10 +3,13 @@ from django.contrib import admin
 from django import forms
 from django.forms.widgets import CheckboxSelectMultiple
 
-from .models import Product, ProductImage, Menu, Category, Collection, ImageCollection, Size, ProductColor, Color
+from .models import Product, ProductImage, Menu, Category, Collection, ImageCollection, Size, ProductColor, Color, Order, OrderItem, Payment
 
 
 admin.site.register(ProductImage)
+
+admin.site.register(Payment)
+
 admin.site.register(ProductColor)
 admin.site.register(Category)
 admin.site.register(Collection)
@@ -43,7 +46,7 @@ class ProductAdminForm(forms.ModelForm):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin, forms.ModelForm):
-    list_display = ['collection','product_name', 'quantity', 'price']
+    list_display = ['id', 'collection','product_name', 'quantity', 'price']
     list_filter = ['category', 'collection']
     search_fields = ('product_name__startswith', )
     exclude = ['views', 'related_products']
@@ -52,6 +55,19 @@ class ProductAdmin(admin.ModelAdmin, forms.ModelForm):
     form = ProductAdminForm
     
 
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 0
+    readonly_fields = ('product', 'colors', 'sizes', 'quantity')
+    can_delete =False
+    
+class OrderAdmin(admin.ModelAdmin):
+    readonly_fields = ('order_number', 'user', 'created_at', 'amount')
+    inlines = [OrderItemInline]  # Добавляем inlines
+
+    list_display = ('order_number', 'user', 'created_at', 'status', 'amount')
+
+admin.site.register(Order, OrderAdmin)
 
 admin.site.site_header = 'Администрирование сайта'
 
