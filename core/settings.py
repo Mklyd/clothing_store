@@ -48,9 +48,16 @@ INSTALLED_APPS = [
     'colorfield',
     'django_filters',
 
+<<<<<<< HEAD
     'store',
     'users_app',
     'profiles_app',
+=======
+
+    'users_app',
+    'profiles_app',
+    'store',
+>>>>>>> 70d3e77adbf66453f2ddcc3a0673d1c2cc721cd0
 ]
 
 MIDDLEWARE = [
@@ -193,3 +200,8 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+
+
+# YOOKASSA
+YOOKASSA_SECRET_KEY = config('YOOKASSA_SECRET_KEY')
+YOOKASSA_ACCOUNT_ID = config('YOOKASSA_ACCOUNT_ID')

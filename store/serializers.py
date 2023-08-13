@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Product, ProductImage, ImageCollection, Collection, Menu, Size, Category, ProductColor, Color
+from .models import Product, ProductImage, ImageCollection, Collection, Menu, Size, Category, ProductColor, Color, Order
 
 
 
@@ -81,23 +81,34 @@ class ImageProductSerializer(serializers.ModelSerializer):
 class SizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Size
-        fields = ['id', 'name', 'quantity']
+        fields = ['id', 'name']
         
     
 class ColorSerializer(serializers.ModelSerializer):
+    sizes = serializers.SerializerMethodField()
+
     class Meta:
         model = Color
-        fields = ['id', 'color_hex', 'color_name']
+        fields = ('id', 'color_hex', 'color_name', 'sizes')
 
-    
+    def get_sizes(self, color):
+        product_colors = ProductColor.objects.filter(color=color)
+        size_data = []
+
+        for product_color in product_colors:
+            size_data.append({
+                'size': SizeSerializer(product_color.size).data,
+                'quantity': product_color.quantity
+            })
+
+        return size_data
     
 class ProductColorSerializer(serializers.ModelSerializer): 
     color = ColorSerializer()
-    size = SizeSerializer(many=True)
     images = ImageProductSerializer( many=True) 
     class Meta:
         model = ProductColor
-        fields = ['id', 'color', 'images', 'size']
+        fields = ['id', 'images', 'color']
 
 
 class RelatedProductSerializer(serializers.ModelSerializer):
@@ -166,3 +177,7 @@ class HomePageSerializer(serializers.Serializer):
 
 
 
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
