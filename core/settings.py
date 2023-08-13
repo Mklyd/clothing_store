@@ -14,6 +14,8 @@ from pathlib import Path
 
 from decouple import config
 
+from datetime import timedelta
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -46,9 +48,9 @@ INSTALLED_APPS = [
     'colorfield',
     'django_filters',
 
+    'store',
     'users_app',
     'profiles_app',
-    'store'
 ]
 
 MIDDLEWARE = [
@@ -167,6 +169,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
    'SIGNING_KEY': 'django-insecure-njv7%gq0g-rf$o(u+pzrrydfsj3qq*r=sti*q_2h92&7t@eeim',
    'AUTH_HEADER_TYPES': ('Bearer',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
 DOMAIN_NAME = 'example.com'

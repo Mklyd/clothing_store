@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/', include('store.urls')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
+    path('profile/', include('profiles_app.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:
