@@ -174,7 +174,7 @@ class ProductColor(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productcolors')
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     images = models.ManyToManyField('ProductImage', verbose_name='Изображения товара')
-    size = models.ManyToManyField(Size)
+    size = models.ForeignKey(Size, on_delete=models.PROTECT, null=True)
     quantity = models.PositiveIntegerField(null=True, verbose_name='Количество товара')
 
     class Meta:
@@ -210,6 +210,15 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=100, choices=CHOICES_ORDER, default='created')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    track_id = models.CharField(max_length=255, verbose_name='Номер для отслеживания заказа', blank=True)
+
+    class Meta:
+        verbose_name_plural = 'Заказы'
+        verbose_name = 'Заказ'
+
+
+    def __str__(self):
+        return f"{self.order_number} - {self.user}"
     
 
 class OrderItem(models.Model):

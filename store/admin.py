@@ -18,7 +18,6 @@ admin.site.register(Menu)
 admin.site.register(Color)
 
 class ProductColorAdminForm(forms.ModelForm):
-    size = forms.ModelMultipleChoiceField(queryset=Size.objects.all(), widget=CheckboxSelectMultiple, required=False)
     
     class Meta:
         model = ProductColor

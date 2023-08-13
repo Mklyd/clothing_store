@@ -202,6 +202,7 @@ def generate_order_number():
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from yookassa import Configuration, Payment
+from rest_framework.permissions import IsAuthenticated
 
 from .models import Order, OrderItem, Product
 
@@ -227,8 +228,7 @@ class YookassaPaymentCreateAPIView(APIView):
         for product_data in product_data_list:
             product_id = product_data.get("product_id")
             quantity = product_data.get("quantity")
-            colors = product_data.get("colors", [])
-            sizes = product_data.get("sizes", [])
+            size_id = product_data.get("sizes")
             price = product_data.get("price")
 
             if product_id is None or quantity is None:
@@ -245,24 +245,26 @@ class YookassaPaymentCreateAPIView(APIView):
                 )
                 
                 # Добавление цветов к элементу заказа
-                for color_id in colors:
+                color_id = product_data.get("colors")  # Получите ID цвета из данных продукта
+                if color_id:
                     color = Color.objects.get(pk=color_id)
                     order_item.colors.add(color)
-                
                 # Добавление размера к элементу заказа, если указан
-                for size_id in sizes:
+                    
+                if size_id:
                     size = Size.objects.get(pk=size_id)
                     order_item.sizes.add(size)
-                if size:
-                    order_item.size = size
                     
                 order_item.save()
                 order_items.append(order_item)
 
             except Product.DoesNotExist:
                 return Response({"error": "Продукт с ID {} не найден".format(product_id)}, status=400)
+        
         order.amount = total_amount
         order.save()
+
+
         Configuration.account_id = settings.YOOKASSA_ACCOUNT_ID
         Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 

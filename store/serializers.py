@@ -85,19 +85,30 @@ class SizeSerializer(serializers.ModelSerializer):
         
     
 class ColorSerializer(serializers.ModelSerializer):
+    sizes = serializers.SerializerMethodField()
+
     class Meta:
         model = Color
-        fields = ['id', 'color_hex', 'color_name']
+        fields = ('id', 'color_hex', 'color_name', 'sizes')
 
-    
+    def get_sizes(self, color):
+        product_colors = ProductColor.objects.filter(color=color)
+        size_data = []
+
+        for product_color in product_colors:
+            size_data.append({
+                'size': SizeSerializer(product_color.size).data,
+                'quantity': product_color.quantity
+            })
+
+        return size_data
     
 class ProductColorSerializer(serializers.ModelSerializer): 
     color = ColorSerializer()
-    size = SizeSerializer(many=True)
     images = ImageProductSerializer( many=True) 
     class Meta:
         model = ProductColor
-        fields = ['id', 'color', 'images', 'size', 'quantity']
+        fields = ['id', 'images', 'color']
 
 
 class RelatedProductSerializer(serializers.ModelSerializer):
