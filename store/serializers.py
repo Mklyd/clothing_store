@@ -136,7 +136,11 @@ class ProductNameSerializer(serializers.ModelSerializer):
     def get_image(self, obj):
         first_image = obj.productcolors.first().images.first() if obj.productcolors.exists() else None
         if first_image:
-            return first_image.image_url.url
+            image_url = first_image.image_url.url
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(image_url)
+            return image_url
         return None
 
 

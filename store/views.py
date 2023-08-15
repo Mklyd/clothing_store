@@ -217,18 +217,65 @@ class YookassaPaymentCreateAPIView(APIView):
         order_items = []
         total_amount = 0
         
+       # Получение данных о клиенте
+        client_data = request.data.get("client_data", {})
+        first_name = client_data.get("first_name")
+        last_name = client_data.get("last_name")
+        email = client_data.get("email")
+        phone = client_data.get("phone")
+        city = client_data.get("city")
+        delivery_method = client_data.get("delivery_method")
+        street = client_data.get("street")
+        house = client_data.get("house")
+        apartment_office = client_data.get("apartment_office")
+        postal_code = client_data.get("postal_code")
+        courier_comment = client_data.get("courier_comment")
+        
         # Создание заказа с автоматическим номером и суммой
         order_number = generate_order_number()
         if user is None:
-            order = Order.objects.create(status='created', amount=total_amount, order_number=order_number)
+            order = Order.objects.create(
+                status='created',
+                amount=total_amount,
+                order_number=order_number,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                phone=phone,
+                city=city,
+                delivery_method=delivery_method,
+                street=street,
+                house=house,
+                apartment_office=apartment_office,
+                postal_code=postal_code,
+                courier_comment=courier_comment
+            )
         else:
-            order = Order.objects.create(user=user, status='created', amount=total_amount, order_number=order_number)
+            order = Order.objects.create(
+                user=user,
+                status='created',
+                amount=total_amount,
+                order_number=order_number,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                phone=phone,
+                city=city,
+                delivery_method=delivery_method,
+                street=street,
+                house=house,
+                apartment_office=apartment_office,
+                postal_code=postal_code,
+                courier_comment=courier_comment
+            )
 
-        # Обработка данных о продуктах
-        for product_data in product_data_list:
+
+       # Обработка данных о продуктах
+        for product_data in product_data_list:  
             product_id = product_data.get("product_id")
             quantity = product_data.get("quantity")
-            size_id = product_data.get("sizes")
+            size_id = product_data.get("size_id")
+            color_id = product_data.get("color_id")
             price = product_data.get("price")
 
             if product_id is None or quantity is None:
@@ -243,23 +290,21 @@ class YookassaPaymentCreateAPIView(APIView):
                     product=product,
                     quantity=quantity,
                 )
-                
-                # Добавление цветов к элементу заказа
-                color_id = product_data.get("colors")  # Получите ID цвета из данных продукта
+
                 if color_id:
                     color = Color.objects.get(pk=color_id)
                     order_item.colors.add(color)
-                # Добавление размера к элементу заказа, если указан
-                    
+
                 if size_id:
                     size = Size.objects.get(pk=size_id)
                     order_item.sizes.add(size)
-                    
+
                 order_item.save()
                 order_items.append(order_item)
 
             except Product.DoesNotExist:
                 return Response({"error": "Продукт с ID {} не найден".format(product_id)}, status=400)
+
         
         order.amount = total_amount
         order.save()
