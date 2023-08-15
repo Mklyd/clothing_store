@@ -47,29 +47,23 @@ INSTALLED_APPS = [
     'rest_framework',
     'colorfield',
     'django_filters',
+    "corsheaders",
 
-<<<<<<< HEAD
     'store',
     'users_app',
     'profiles_app',
-=======
-
-    'users_app',
-    'profiles_app',
-    'store',
->>>>>>> 70d3e77adbf66453f2ddcc3a0673d1c2cc721cd0
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'silk.middleware.SilkyMiddleware',
-
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -205,3 +199,7 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 # YOOKASSA
 YOOKASSA_SECRET_KEY = config('YOOKASSA_SECRET_KEY')
 YOOKASSA_ACCOUNT_ID = config('YOOKASSA_ACCOUNT_ID')
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]

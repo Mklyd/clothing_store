@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils.safestring import mark_safe
-from profiles_app.models import Profile
 
 from colorfield.fields import ColorField
 
@@ -193,6 +192,7 @@ class ProductColor(models.Model):
 
     image_tag.short_description = 'Image'
 
+from profiles_app.models import Profile
 
 class Order(models.Model):
     CHOICES_ORDER = (
