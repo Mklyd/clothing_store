@@ -2,8 +2,6 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from profiles_app.models import Profile
 
-from colorfield.fields import ColorField
-
 
 class Menu(models.Model):
     CHOICES = (
@@ -204,13 +202,25 @@ class Order(models.Model):
         ('Received', 'Получено'),
     )
 
-    order_number = models.CharField(max_length=10, unique=True, editable=False, null=True)  
-    user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True, blank=True)
+    order_number = models.CharField(max_length=10 ,unique=True, editable=False, null=True)
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)
     products = models.ManyToManyField(Product, through='OrderItem')
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=100, choices=CHOICES_ORDER, default='created')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    track_id = models.CharField(max_length=255, verbose_name='Номер для отслеживания заказа', blank=True)
+    
+    # Данные клиента
+    first_name = models.CharField(max_length=255, verbose_name='Имя', null=True)
+    last_name = models.CharField(max_length=255, verbose_name='Фамилия', null=True)
+    email = models.EmailField(verbose_name='Email', null=True)
+    phone = models.CharField(max_length=20, verbose_name='Телефон', null=True, blank=True)
+    city = models.CharField(max_length=255, verbose_name='Населённый пункт', null=True)
+    delivery_method = models.CharField(max_length=255, verbose_name='Способ доставки', null=True)
+    street = models.CharField(max_length=255, verbose_name='Улица', null=True)
+    house = models.CharField(max_length=10, verbose_name='Дом', null=True)
+    apartment_office = models.CharField(max_length=10, verbose_name='Квартира/офис', null=True)
+    postal_code = models.CharField(max_length=10, verbose_name='Индекс', null=True)
+    courier_comment = models.TextField(verbose_name='Комментарий для курьера', blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Заказы'
