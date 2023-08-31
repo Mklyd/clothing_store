@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Product, ProductImage, ImageCollection, Collection, Menu, Size, Category, ProductColor, Color, Order
+from .models import Product, ProductImage, ImageCollection, Collection, Menu, Size, Category, ProductColor, Color, Order, PaymentRecord
 
 
 
@@ -92,24 +92,33 @@ class ColorSerializer(serializers.ModelSerializer):
         fields = ('id', 'color_hex', 'color_name', 'sizes')
 
     def get_sizes(self, color):
-        product_colors = ProductColor.objects.filter(color=color)
         size_data = []
+        processed_sizes = set()  # Используем множество для уникальных размеров
+
+        product_colors = ProductColor.objects.filter(color=color).select_related('size')
 
         for product_color in product_colors:
-            size_data.append({
-                'size': SizeSerializer(product_color.size).data,
-                'quantity': product_color.quantity
-            })
+            size_id = product_color.size.id
+
+            if size_id not in processed_sizes:
+                size_data.append({
+                    'size': SizeSerializer(product_color.size).data,
+                    'quantity': product_color.quantity
+                })
+                processed_sizes.add(size_id)  # Добавляем размер в множество
 
         return size_data
-    
+
+
+
+
 class ProductColorSerializer(serializers.ModelSerializer): 
     color = ColorSerializer()
     images = ImageProductSerializer( many=True) 
     class Meta:
         model = ProductColor
         fields = ['id', 'images', 'color']
-
+    
 
 class RelatedProductSerializer(serializers.ModelSerializer):
     collection_name = serializers.CharField(source='collection.collection_name', read_only=True)
@@ -145,7 +154,36 @@ class ProductNameSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    colors = ProductColorSerializer(source='productcolors', many=True)
+    colors = serializers.SerializerMethodField()
+    def get_colors(self, product):
+        color_data = []
+        processed_colors = set()
+
+        for product_color in product.productcolors.select_related('color', 'size').order_by('color__id'):
+            color_id = product_color.color.id
+
+            if color_id not in processed_colors:
+                color_data.append({
+                    'id': product_color.color.id,
+                    'color_hex': product_color.color.color_hex,
+                    'color_name': product_color.color.color_name,
+                    'sizes': [
+                        {
+                            'size': {'id': product_color.size.id, 'name': product_color.size.name},
+                            'quantity': product_color.quantity
+                        }
+                    ]
+                })
+                processed_colors.add(color_id)
+            else:
+                for existing_color in color_data:
+                    if existing_color['id'] == color_id:
+                        existing_color['sizes'].append({
+                            'size': {'id': product_color.size.id, 'name': product_color.size.name},
+                            'quantity': product_color.quantity
+                        })
+
+        return color_data
     collection = CollectionSerializer()
     category = CategorySerializer(many=True)
     instructions = serializers.SerializerMethodField()
@@ -184,4 +222,9 @@ class HomePageSerializer(serializers.Serializer):
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
+        fields = '__all__'
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentRecord
         fields = '__all__'

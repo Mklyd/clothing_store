@@ -5,6 +5,7 @@ from django.conf import settings
 from django.conf.urls.static  import static
 
 from .views import ProductViewSet, MenuViewSet, CollectionViewSet, ColorAndSizesViewSet, CategoryViewSet, HomePageViewSet, OrderViewSet, YookassaPaymentCreateAPIView
+""" , PaymentConfirmationView, PaymentCancellationView """
 
 router = routers.DefaultRouter()
 router.register(r'product', ProductViewSet)
@@ -19,6 +20,8 @@ router.register(r'home', HomePageViewSet, basename='home')
 
 urlpatterns = [
     path('payments/yookassa/', YookassaPaymentCreateAPIView.as_view(), name='yookassa-payment-create'),
+    #path('confirm-payment/', PaymentConfirmationView.as_view(), name='confirm-payment'), 
+    #path('cancel-payment/', PaymentCancellationView.as_view(), name='cancel-payment'),
     path('orders/', OrderViewSet.as_view({'get': 'list'}), name='order-list'),
     path('', include(router.urls))
 ]
