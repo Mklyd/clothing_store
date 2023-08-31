@@ -170,11 +170,11 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
    'SIGNING_KEY': 'django-insecure-njv7%gq0g-rf$o(u+pzrrydfsj3qq*r=sti*q_2h92&7t@eeim',
    'AUTH_HEADER_TYPES': ('Bearer',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 }
 
-DOMAIN_NAME = 'example.com'
+DOMAIN = 'localhost:3000'
 
 # DJOSER
 DJOSER = {
@@ -183,7 +183,7 @@ DJOSER = {
     'SET_PASSWORD_RETYPE': True,
     'PASSWORD_RESET_CONFIRM_RETYPE': True,
     'TOKEN_MODEL': None,  # We use only JWT
-    'ACTIVATION_URL': 'auth/verify/{uid}/{token}/',
+    'ACTIVATION_URL': '/verify/{uid}/{token}/',
 }
 
 # EMAIL

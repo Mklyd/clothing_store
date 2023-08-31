@@ -11,6 +11,6 @@ def create_profile(sender, user, request, **kwargs):
 
     Profile.objects.create(
         user=user,
-        name=data.get("name", ""),
-        surname=data.get("surname", "")
+        first_name=data.get("first_name", ""),
+        last_name=data.get("last_name", "")
     )
