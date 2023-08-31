@@ -1,10 +1,11 @@
 from django import forms
-from .models import Color
 
-class ColorForm(forms.ModelForm):
-    image = forms.ImageField(required=False)
-    color = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}))
 
-    class Meta:
-        model = Color
-        fields = ['name', 'image', 'color']
+class PaymentActionForm(forms.Form):
+    ACTION_CHOICES = [
+        ('confirm', 'Подтвердить платеж'),
+        ('cancel', 'Отменить платеж'),
+    ]
+
+    action = forms.ChoiceField(choices=ACTION_CHOICES, label='Выберите действие')
+    payment_id = forms.IntegerField(label='ID платежа')

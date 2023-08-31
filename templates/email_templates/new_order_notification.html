@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Order Notification</title>
+</head>
+<body>
+    <h1>Уведомление о новом заказе</h1>
+    <p>Новый заказ был создан.ID заказа: {{ order.id }}</p>
+    <p>Заказчик: {{ order.first_name }} {{ order.last_name }}</p>
+    <p>Сумма: {{ order.amount }}</p>
+    <p>Дата создания заказа: {{ order.created_at }}</p>
+    <p>Статус заказа: {{ order.get_status_display }}</p>
+    <p>Способ доставки: {{ order.delivery_method }}</p>
+    <p>Адресс: {{ order.city }}, {{ order.street }}, {{ order.house }}, {{ order.apartment_office }}, {{ order.postal_code }}</p>
+    <p>Email: {{ order.email }}</p>
+    <p>Номер телефона: {{ order.phone }}</p>
+    <p>Комментарий для курьера: {{ order.courier_comment }}</p>
+    <h2>Товары:</h2>
+    <ul>
+        {% for item in order.order_items.all %}
+            <li>{{ item.product.product_name }} - {{ item.quantity }} pcs</li>
+            <ul>
+                {% for color in item.colors.all %}
+                    <li>Цвет: {{ color.color_name }}</li>
+                {% endfor %}
+                {% for size in item.sizes.all %}
+                    <li>Размер: {{ size.name }}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </ul>
+</body>
+</html>

@@ -203,6 +203,7 @@ class Order(models.Model):
     )
 
     order_number = models.CharField(max_length=10 ,unique=True, editable=False, null=True)
+    payment_record = models.OneToOneField('PaymentRecord', on_delete=models.CASCADE, related_name='order_record_order', null=True)
     user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)
     products = models.ManyToManyField(Product, through='OrderItem')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -242,8 +243,15 @@ class OrderItem(models.Model):
     def subtotal(self):
         return self.product.price * self.quantity
 
-class Payment(models.Model):
-    order = models.OneToOneField(Order, on_delete=models.CASCADE)
+class PaymentRecord(models.Model):
+    order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='payment_record_order')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('confirmed', 'Confirmed'), ('cancelled', 'Cancelled')])
     payment_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = 'Платежи'
+        verbose_name = 'Платеж'
+
+    def __str__(self) -> str:
+        return str(self.order)

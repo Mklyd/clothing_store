@@ -71,7 +71,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Добавьте эту строку
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -194,8 +194,10 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-
-
+ADMINS = [
+    ('Your Name', 'kheda.dina@yandex.ru'),
+    
+]
 # YOOKASSA
 YOOKASSA_SECRET_KEY = config('YOOKASSA_SECRET_KEY')
 YOOKASSA_ACCOUNT_ID = config('YOOKASSA_ACCOUNT_ID')

@@ -8,6 +8,8 @@ from django.db.models import Count
 
 from .models import Product, Collection, Menu, ProductColor, Size, Category, ProductView, Color, Order
 from .serializers import ProductSerializer, CollectionSerializer, MenuSerializer, CategorySerializer, HomePageSerializer, RelatedProductSerializer, CollectionNameSerializer, ProductNameSerializer, ProductColorSerializer, OrderSerializer
+
+
 class MyCustomPagination(PageNumberPagination):
     page_size = 9  # Количество элементов на одной странице
     page_size_query_param = 'page_size'  # Параметр запроса для указания количества элементов на странице
@@ -72,7 +74,6 @@ class ProductFilter(FilterSet):
             'collection__collection_name': ['icontains'],  # Filtering based on collection_name
             'category__menu_item__menu_name': ['exact']
         }
-    
    
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -185,7 +186,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from yookassa import Configuration, Payment
-from .models import Order, OrderItem
+from .models import Order, OrderItem, PaymentRecord
 
 # shop/views.py
 import random
@@ -202,8 +203,9 @@ def generate_order_number():
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from yookassa import Configuration, Payment
-from rest_framework.permissions import IsAuthenticated
-
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
 from .models import Order, OrderItem, Product
 
 class YookassaPaymentCreateAPIView(APIView):
@@ -308,7 +310,7 @@ class YookassaPaymentCreateAPIView(APIView):
         
         order.amount = total_amount
         order.save()
-
+        
 
         Configuration.account_id = settings.YOOKASSA_ACCOUNT_ID
         Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
@@ -324,7 +326,93 @@ class YookassaPaymentCreateAPIView(APIView):
             },
             "description": "Оплата заказа №" + str(order.id)
         })
+        # Получение данных о платеже
+        payment_status = payment.status
+        payment_amount = payment.amount.value
+        # Сохранение данных о платеже в модели Payment
+        payment_record = PaymentRecord.objects.create(
+            order=order,
+            amount=payment_amount,
+            status=payment_status
+        )
+        payment_record.save()
+        # После создания заказа отправляем уведомление
+        subject = 'New Order Notification'
+        message = f'A new order has been placed. Order ID: {order.id}'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [admin_email for _, admin_email in settings.ADMINS]
 
+        # Отправка письма с использованием шаблона
+        email_html_message = render_to_string('email_templates/new_order_notification.html', {'order': order})
+        try:
+            send_mail(subject, message, from_email, recipient_list, html_message=email_html_message)
+            print("Email sent successfully")
+        except Exception as e:
+            print("Email sending failed:")
         confirmation_url = payment.confirmation.confirmation_url
 
         return Response({"confirmation_url": confirmation_url})
+    
+
+""" import base64
+import requests
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import PaymentRecord
+from .serializers import PaymentSerializer
+def confirm_payment(payment_id):
+    shop_id = 'your_shop_id'
+    secret_key = 'your_secret_key'
+    headers = {
+        'Authorization': f'Basic {base64.b64encode(f"{shop_id}:{secret_key}".encode()).decode()}'
+    }
+    response = requests.post(f'https://api.yookassa.ru/v3/payments/{payment_id}/capture', headers=headers)
+
+    if response.status_code == 200:
+        payment = Payment.objects.get(payment_id=payment_id)
+        payment.status = 'confirmed'
+        payment.save()
+        return True
+    else:
+        return False
+
+def cancel_payment(payment_id):
+    shop_id = settings.YOOKASSA_ACCOUNT_ID
+    secret_key = settings.YOOKASSA_SECRET_KEY
+    headers = {
+        'Authorization': f'Basic {base64.b64encode(f"{shop_id}:{secret_key}".encode()).decode()}'
+    }
+    response = requests.post(f'https://api.yookassa.ru/v3/payments/{payment_id}/cancel', headers=headers)
+
+    if response.status_code == 200:
+        payment = Payment.objects.get(payment_id=payment_id)
+        payment.status = 'cancelled'
+        payment.save()
+        return True
+    else:
+        return False
+
+class PaymentConfirmationView(APIView):
+    def post(self, request, *args, **kwargs):
+        payment_id = request.data.get('payment_id')
+        
+        if payment_id:
+            if confirm_payment(payment_id):
+                return Response({'message': 'Payment confirmed successfully.'})
+            else:
+                return Response({'error': 'Failed to confirm payment.'}, status=400)
+        else:
+            return Response({'error': 'Payment ID is required.'}, status=400)
+
+class PaymentCancellationView(APIView):
+    def post(self, request, *args, **kwargs):
+        payment_id = request.data.get('payment_id')
+        
+        if payment_id:
+            if cancel_payment(payment_id):
+                return Response({'message': 'Payment cancelled successfully.'})
+            else:
+                return Response({'error': 'Failed to cancel payment.'}, status=400)
+        else:
+            return Response({'error': 'Payment ID is required.'}, status=400)
+ """

@@ -3,12 +3,12 @@ from django.contrib import admin
 from django import forms
 from django.forms.widgets import CheckboxSelectMultiple
 
-from .models import Product, ProductImage, Menu, Category, Collection, ImageCollection, Size, ProductColor, Color, Order, OrderItem, Payment
+from .models import Product, ProductImage, Menu, Category, Collection, ImageCollection, Size, ProductColor, Color, Order, OrderItem, PaymentRecord
 
-
+from django.urls import reverse
+from django.utils.html import format_html
 admin.site.register(ProductImage)
-
-admin.site.register(Payment)
+admin.site.register(PaymentRecord)
 
 admin.site.register(ProductColor)
 admin.site.register(Category)
@@ -59,14 +59,22 @@ class OrderItemInline(admin.TabularInline):
     extra = 0
     readonly_fields = ('product', 'colors', 'sizes', 'quantity')
     can_delete =False
-    
+class PaymentActionForm(forms.Form):
+    CHOICES = (
+        ('confirm', 'Подтвердить платеж'),
+        ('cancel', 'Отменить платеж'),
+    )
+    action = forms.ChoiceField(choices=CHOICES, widget=forms.RadioSelect)
 class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ('order_number', 'user', 'created_at', 'amount')
     inlines = [OrderItemInline]  # Добавляем inlines
 
     list_display = ('order_number', 'user', 'created_at', 'status', 'amount')
+    
 
 admin.site.register(Order, OrderAdmin)
+
+
 
 admin.site.site_header = 'Администрирование сайта'
 
