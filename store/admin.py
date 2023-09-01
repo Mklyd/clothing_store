@@ -34,24 +34,19 @@ class ProductColorInline(admin.TabularInline):
 @admin.register(Size)
 class SizeAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
-
-
-class ProductAdminForm(forms.ModelForm):
-    Связанные_товары = forms.ModelMultipleChoiceField(queryset=Product.objects.all(), widget=CheckboxSelectMultiple, required=False)
-    
-    class Meta:
-        model = Product
-        fields = '__all__'
-
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.db import models  # Добавьте импорт
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin, forms.ModelForm):
     list_display = ['id', 'collection','product_name', 'quantity', 'price']
     list_filter = ['category', 'collection']
     search_fields = ('product_name__startswith', )
-    exclude = ['views', 'related_products']
+    formfield_overrides = {
+        models.ManyToManyField: {'widget': CheckboxSelectMultiple}
+    }
+    exclude = ['views']
     filter_vertical = ('colors', 'category')
     inlines = [ProductColorInline]
-    form = ProductAdminForm
     
 
 class OrderItemInline(admin.TabularInline):

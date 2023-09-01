@@ -62,19 +62,19 @@ class ColorFilter(Filter):
             return qs.filter(**{f"{self.field_name}__in": colors})
         return qs
 
-    
+
 class ProductFilter(FilterSet):
-    category_name = CharFilter(field_name='category__category_name', lookup_expr='icontains')
+    category = CharFilter(field_name='category__category_name', lookup_expr='icontains')
+    size = CharFilter(field_name='productcolors__size__name', lookup_expr='exact', label='Размер')
+    color = CharFilter(field_name='productcolors__color__color_name', lookup_expr='exact', label='Цвет')
+    product = CharFilter(field_name='product_name', lookup_expr='icontains', label='Название продукта')
+    collection = CharFilter(field_name='collection__collection_name', lookup_expr='icontains', label='Название коллекции')
+    menu = CharFilter(field_name='category__menu_item__menu_name', lookup_expr='exact', label='Меню')
+
     class Meta:
         model = Product
-        fields = {
-            'productcolors__size__name': ['exact'],  # Filtering based on size
-            'productcolors__color__color_name': ['exact'],  # Filtering based on color
-            'product_name': ['icontains'],  # Filtering based on product_name
-            'collection__collection_name': ['icontains'],  # Filtering based on collection_name
-            'category__menu_item__menu_name': ['exact']
-        }
-   
+        fields = []
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -119,6 +119,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         instance_data['recommendations'] =  recommendations_serializer.data
 
         return Response(instance_data)
+    
+    
         """ # Получение IP-адреса пользователя
         ip_address = self.request.META.get('HTTP_X_FORWARDED_FOR') or self.request.META.get('REMOTE_ADDR')
         # Проверка, просмотрел ли пользователь товар ранее

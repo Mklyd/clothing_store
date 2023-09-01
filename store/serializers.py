@@ -154,12 +154,22 @@ class ProductNameSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    collection = CollectionSerializer()
+    category = CategorySerializer(many=True)
+    instructions = serializers.SerializerMethodField()
+    views = serializers.SerializerMethodField()
+    related_products = RelatedProductSerializer(many=True, read_only=True)
     colors = serializers.SerializerMethodField()
-    def get_colors(self, product):
+
+    def get_views(self, obj):
+        # Получение количества просмотров с учетом уникальных IP-адресов
+        return obj.views.values('ip').distinct().count() 
+
+    def get_colors(self, obj):
         color_data = []
         processed_colors = set()
 
-        for product_color in product.productcolors.select_related('color', 'size').order_by('color__id'):
+        for product_color in obj.productcolors.select_related('color', 'size').order_by('color__id'):
             color_id = product_color.color.id
 
             if color_id not in processed_colors:
@@ -167,47 +177,31 @@ class ProductSerializer(serializers.ModelSerializer):
                     'id': product_color.color.id,
                     'color_hex': product_color.color.color_hex,
                     'color_name': product_color.color.color_name,
-                    'sizes': [
-                        {
-                            'size': {'id': product_color.size.id, 'name': product_color.size.name},
-                            'quantity': product_color.quantity
-                        }
-                    ]
+                    'sizes': []
                 })
                 processed_colors.add(color_id)
-            else:
-                for existing_color in color_data:
-                    if existing_color['id'] == color_id:
+
+            for existing_color in color_data:
+                if existing_color['id'] == color_id:
+                    if product_color.size:
                         existing_color['sizes'].append({
                             'size': {'id': product_color.size.id, 'name': product_color.size.name},
                             'quantity': product_color.quantity
                         })
 
         return color_data
-    collection = CollectionSerializer()
-    category = CategorySerializer(many=True)
-    instructions = serializers.SerializerMethodField()
 
-    views = serializers.SerializerMethodField()
-    related_products = RelatedProductSerializer(many=True, read_only=True)
-
-
-    def get_views(self, obj):
-        # Получение количества просмотров с учетом уникальных IP-адресов
-        return obj.views.values('ip').distinct().count() 
-    
-
-    class Meta:
-        model = Product
-        fields = ['id', 'collection', 'product_name','price', 'delivery_info', 'sku', 'model_parameters' , 'size_on_the_model', 'description', 'colors' , 'instructions', 'category', 'quantity','related_products', 'date', 'views'] 
-    
-    
     def get_instructions(self, obj):
         instructions = {
             'details': obj.details,
             'care': obj.care
         }
         return instructions
+
+    class Meta:
+        model = Product
+        fields = ['id', 'collection', 'product_name','price', 'delivery_info', 'sku', 'model_parameters', 'size_on_the_model', 'description', 'colors', 'instructions', 'category', 'quantity', 'related_products', 'date', 'views']
+
 
 
 class HomePageSerializer(serializers.Serializer):
