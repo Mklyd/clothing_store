@@ -171,7 +171,7 @@ class ProductColor(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productcolors')
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     images = models.ManyToManyField('ProductImage', verbose_name='Изображения товара')
-    size = models.ForeignKey(Size, on_delete=models.PROTECT, null=True)
+    size = models.ForeignKey(Size, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.PositiveIntegerField(null=True, verbose_name='Количество товара')
 
     class Meta:
