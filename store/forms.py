@@ -7,5 +7,6 @@ class PaymentActionForm(forms.Form):
         ('cancel', 'Отменить платеж'),
     ]
 
-    action = forms.ChoiceField(choices=ACTION_CHOICES, label='Выберите действие')
+    action = forms.ChoiceField(
+        choices=ACTION_CHOICES, label='Выберите действие')
     payment_id = forms.IntegerField(label='ID платежа')

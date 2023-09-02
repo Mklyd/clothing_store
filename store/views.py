@@ -1,3 +1,14 @@
+from urllib.parse import unquote
+from .models import Order, OrderItem, Product
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
+import string
+import random
+from .models import Order, OrderItem, PaymentRecord
+from yookassa import Configuration, Payment
+from rest_framework.views import APIView
+from django.conf import settings
+import uuid
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter, Filter
@@ -12,25 +23,31 @@ from .serializers import ProductSerializer, CollectionSerializer, MenuSerializer
 
 class MyCustomPagination(PageNumberPagination):
     page_size = 9  # Количество элементов на одной странице
-    page_size_query_param = 'page_size'  # Параметр запроса для указания количества элементов на странице
+    # Параметр запроса для указания количества элементов на странице
+    page_size_query_param = 'page_size'
+
 
 class ColorAndSizesViewSet(viewsets.ViewSet):
     def list(self, request):
-        colors = Color.objects.values('id', 'color_hex', 'color_name').distinct()
+        colors = Color.objects.values(
+            'id', 'color_hex', 'color_name').distinct()
         size = Size.objects.values('id', 'name').distinct()
         data = {
             'colors': list(colors),
             'sizes': list(size)
         }
         return Response(data)
-    
+
+
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
+
 class ProductColorViewSet(viewsets.ModelViewSet):
     serializer_class = ProductColorSerializer
     queryset = ProductColor.objects.all()
+
 
 class MenuViewSet(viewsets.ModelViewSet):
     queryset = Menu.objects.all()
@@ -45,8 +62,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.all().prefetch_related('images')
     serializer_class = CollectionSerializer
-    
-from urllib.parse import unquote
+
 
 class SizeFilter(Filter):
     def filter(self, qs, value):
@@ -54,6 +70,7 @@ class SizeFilter(Filter):
             sizes = unquote(value).split(';')
             return qs.filter(**{f"{self.field_name}__in": sizes})
         return qs
+
 
 class ColorFilter(Filter):
     def filter(self, qs, value):
@@ -64,12 +81,18 @@ class ColorFilter(Filter):
 
 
 class ProductFilter(FilterSet):
-    category = CharFilter(field_name='category__category_name', lookup_expr='icontains')
-    size = CharFilter(field_name='productcolors__size__name', lookup_expr='exact', label='Размер')
-    color = CharFilter(field_name='productcolors__color__color_name', lookup_expr='exact', label='Цвет')
-    product = CharFilter(field_name='product_name', lookup_expr='icontains', label='Название продукта')
-    collection = CharFilter(field_name='collection__collection_name', lookup_expr='icontains', label='Название коллекции')
-    menu = CharFilter(field_name='category__menu_item__menu_name', lookup_expr='exact', label='Меню')
+    category = CharFilter(
+        field_name='category__category_name', lookup_expr='icontains')
+    size = CharFilter(field_name='productcolors__size__name',
+                      lookup_expr='exact', label='Размер')
+    color = CharFilter(field_name='productcolors__color__color_name',
+                       lookup_expr='exact', label='Цвет')
+    product = CharFilter(field_name='product_name',
+                         lookup_expr='icontains', label='Название продукта')
+    collection = CharFilter(field_name='collection__collection_name',
+                            lookup_expr='icontains', label='Название коллекции')
+    menu = CharFilter(field_name='category__menu_item__menu_name',
+                      lookup_expr='exact', label='Меню')
 
     class Meta:
         model = Product
@@ -79,11 +102,12 @@ class ProductFilter(FilterSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductNameSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['product_name', 'description', 'model_parameters', 'details', 'care']
+    filter_backends = [DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['product_name', 'description',
+                     'model_parameters', 'details', 'care']
     ordering_fields = ['price', 'date']
     filterset_class = ProductFilter
-    
 
     def get_queryset(self):
         queryset = Product.objects.all()
@@ -92,7 +116,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         max_price = self.request.query_params.get('max_price')
 
         if min_price is not None and max_price is not None:
-            queryset = queryset.filter(price__range=(min_price, max_price)).order_by('price')
+            queryset = queryset.filter(price__range=(
+                min_price, max_price)).order_by('price')
         elif max_price is not None:
             queryset = queryset.filter(price__lte=max_price).order_by('-price')
         elif min_price is not None:
@@ -100,27 +125,29 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         ordering = self.request.query_params.get('ordering')
         if ordering == 'views_count':
-            queryset = queryset.annotate(views_count=Count('views__ip')).order_by('-views_count')
+            queryset = queryset.annotate(views_count=Count(
+                'views__ip')).order_by('-views_count')
 
         return queryset
-    
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        
+
         recommendations = Product.objects.filter(
             category__in=instance.category.all(),
             price__gte=instance.price
         ).exclude(id=instance.id)
-    
-        recommendations_serializer = RelatedProductSerializer(recommendations, many=True, context={'request': request})
-        instance_serializer = ProductSerializer(instance, context={'request': request})
+
+        recommendations_serializer = RelatedProductSerializer(
+            recommendations, many=True, context={'request': request})
+        instance_serializer = ProductSerializer(
+            instance, context={'request': request})
 
         instance_data = instance_serializer.data
-        instance_data['recommendations'] =  recommendations_serializer.data
+        instance_data['recommendations'] = recommendations_serializer.data
 
         return Response(instance_data)
-    
-    
+
         """ # Получение IP-адреса пользователя
         ip_address = self.request.META.get('HTTP_X_FORWARDED_FOR') or self.request.META.get('REMOTE_ADDR')
         # Проверка, просмотрел ли пользователь товар ранее
@@ -134,42 +161,47 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
 
         return Response(serializer.data) """
-    
+
 
 class HomePageViewSet(viewsets.ModelViewSet):
     serializer_class = HomePageSerializer
+
     def list(self, request):
         all_collections = Collection.objects.all().prefetch_related('images')
-        all_collection_serializer = CollectionNameSerializer(all_collections, many=True, context={'request': request})
+        all_collection_serializer = CollectionNameSerializer(
+            all_collections, many=True, context={'request': request})
 
         # Получение 5 последних элементов коллекций
         collections = Collection.objects.order_by('-id')[:5]
-        collection_serializer = CollectionNameSerializer(collections, many=True, context={'request': request})
-        
+        collection_serializer = CollectionNameSerializer(
+            collections, many=True, context={'request': request})
+
         # Получение 8 категорий с 4 последними продуктами для каждой категории
         categories = Category.objects.all()[:8]
         categories_data = []
         for category in categories:
             products = category.product_set.order_by('-id')[:4]
-            product_serializer = ProductNameSerializer(products, many=True, context={'request': request})
+            product_serializer = ProductNameSerializer(
+                products, many=True, context={'request': request})
             category_data = {
                 'category': CategorySerializer(category).data,
                 'products': product_serializer.data
             }
             categories_data.append(category_data)
-        
+
         # Получение 4 коллекций с 2 последними продуктами
         collections = Collection.objects.order_by('-id')[:4]
         collections_data = []
         for collection in collections:
             products = collection.product_set.order_by('-id')[:2]
-            product_serializer = ProductNameSerializer(products, many=True, context={'request': request})
+            product_serializer = ProductNameSerializer(
+                products, many=True, context={'request': request})
             collection_data = {
                 'collection': CollectionNameSerializer(collection, context={'request': request}).data,
                 'products': product_serializer.data
             }
             collections_data.append(collection_data)
-        
+
         # Составление и возврат данных в формате JSON
         data = {
             'all_collections': all_collection_serializer.data,
@@ -180,35 +212,18 @@ class HomePageViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-# shop/views.py
 
-import uuid
-from django.conf import settings
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from yookassa import Configuration, Payment
-from .models import Order, OrderItem, PaymentRecord
 
-# shop/views.py
-import random
-import string
+
 
 def generate_order_number():
     # Генерируем случайный номер, состоящий из букв и цифр
     letters_and_digits = string.ascii_uppercase + string.digits
-    order_number = ''.join(random.choice(letters_and_digits) for _ in range(10))
+    order_number = ''.join(random.choice(letters_and_digits)
+                           for _ in range(10))
     return order_number
 
-# shop/views.py
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from yookassa import Configuration, Payment
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.conf import settings
-from .models import Order, OrderItem, Product
 
 class YookassaPaymentCreateAPIView(APIView):
     def post(self, request, format=None):
@@ -220,7 +235,7 @@ class YookassaPaymentCreateAPIView(APIView):
         product_data_list = request.data.get("products", [])
         order_items = []
         total_amount = 0
-        
+
        # Получение данных о клиенте
         client_data = request.data.get("client_data", {})
         first_name = client_data.get("first_name")
@@ -234,7 +249,7 @@ class YookassaPaymentCreateAPIView(APIView):
         apartment_office = client_data.get("apartment_office")
         postal_code = client_data.get("postal_code")
         courier_comment = client_data.get("courier_comment")
-        
+
         # Создание заказа с автоматическим номером и суммой
         order_number = generate_order_number()
         if user is None:
@@ -273,9 +288,8 @@ class YookassaPaymentCreateAPIView(APIView):
                 courier_comment=courier_comment
             )
 
-
        # Обработка данных о продуктах
-        for product_data in product_data_list:  
+        for product_data in product_data_list:
             product_id = product_data.get("product_id")
             quantity = product_data.get("quantity")
             size_id = product_data.get("size_id")
@@ -309,10 +323,8 @@ class YookassaPaymentCreateAPIView(APIView):
             except Product.DoesNotExist:
                 return Response({"error": "Продукт с ID {} не найден".format(product_id)}, status=400)
 
-        
         order.amount = total_amount
         order.save()
-        
 
         Configuration.account_id = settings.YOOKASSA_ACCOUNT_ID
         Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
@@ -345,16 +357,18 @@ class YookassaPaymentCreateAPIView(APIView):
         recipient_list = [admin_email for _, admin_email in settings.ADMINS]
 
         # Отправка письма с использованием шаблона
-        email_html_message = render_to_string('email_templates/new_order_notification.html', {'order': order})
+        email_html_message = render_to_string(
+            'email_templates/new_order_notification.html', {'order': order})
         try:
-            send_mail(subject, message, from_email, recipient_list, html_message=email_html_message)
+            send_mail(subject, message, from_email, recipient_list,
+                      html_message=email_html_message)
             print("Email sent successfully")
         except Exception as e:
             print("Email sending failed:")
         confirmation_url = payment.confirmation.confirmation_url
 
         return Response({"confirmation_url": confirmation_url})
-    
+
 
 """ import base64
 import requests
