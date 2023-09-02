@@ -28,6 +28,35 @@ class ProfileView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
+# class FavoriteProductsView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         favorites = FavoriteProducts.objects.filter(user_profile__user=request.user)
+#         products = [item.product for item in favorites]
+#         serializer = ProductNameSerializer(products, many=True)
+#         return Response(serializer.data)
+#     def post(self, request):
+#         data = request.data
+#         user_profile = Profile.objects.get(user=request.user)  # Получаем профиль текущего пользователя
+#         serializer = FavoritesSerializer(data={'user_profile': user_profile.id, 'product': data['product_id']})
+        
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def delete(self, request):
+#         data = request.data
+#         user_profile = Profile.objects.get(user=request.user)  # Получаем профиль текущего пользователя
+        
+#         try:
+#             favorite_product = FavoriteProducts.objects.get(user_profile=user_profile, product=data['product_id'])
+#             favorite_product.delete()
+#             return Response({'message': 'Product removed from favorites'}, status=status.HTTP_204_NO_CONTENT)
+#         except FavoriteProducts.DoesNotExist:
+#             return Response({'message': 'Product not found in favorites'}, status=status.HTTP_404_NOT_FOUND)
+
+
 class FavoriteProductsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -36,21 +65,30 @@ class FavoriteProductsView(APIView):
         products = [item.product for item in favorites]
         serializer = ProductNameSerializer(products, many=True)
         return Response(serializer.data)
+
     def post(self, request):
-        data = request.data
-        user_profile = Profile.objects.get(user=request.user)  # Получаем профиль текущего пользователя
-        serializer = FavoritesSerializer(data={'user_profile': user_profile.id, 'product': data['product_id']})
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        product_id = request.data.get('product_id')
+        if not product_id:
+            return Response({'message': 'product_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_profile = request.user.profile  # Получаем профиль текущего пользователя
+        favorite_product = FavoriteProducts(user_profile=user_profile, product_id=product_id)
+
+        try:
+            favorite_product.save()
+            return Response({'message': 'Product added to favorites'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'message': 'Error adding product to favorites'}, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request):
-        data = request.data
+        product_id = request.query_params.get('product_id')
+        if not product_id:
+            return Response({'message': 'product_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         user_profile = Profile.objects.get(user=request.user)  # Получаем профиль текущего пользователя
         
         try:
-            favorite_product = FavoriteProducts.objects.get(user_profile=user_profile, product=data['product_id'])
+            favorite_product = FavoriteProducts.objects.get(user_profile=user_profile, product=product_id)
             favorite_product.delete()
             return Response({'message': 'Product removed from favorites'}, status=status.HTTP_204_NO_CONTENT)
         except FavoriteProducts.DoesNotExist:
