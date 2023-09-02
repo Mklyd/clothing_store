@@ -27,7 +27,7 @@ class FavoriteProducts(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.product.product_name} - {self.user_profile.name} {self.user_profile.surname}"
+        return f"{self.product.product_name} - {self.user_profile.first_name} {self.user_profile.last_name}"
 
 class CardProducts(models.Model):
     user_profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
@@ -37,5 +37,5 @@ class CardProducts(models.Model):
     color = models.CharField("color", max_length=150, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.product.product_name} - {self.user_profile.name} {self.user_profile.surname}"
+        return f"{self.product.product_name} - {self.user_profile.first_name} {self.user_profile.last_name}"
      

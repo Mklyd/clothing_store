@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Profile, FavoriteProducts, CardProducts
-from .serializers import ProfileSerializer, FavoriteProductsSerializer, CardProductsSerializer
+from .serializers import ProfileSerializer, CardProductsSerializer, FavoritesSerializer, FavoriteProductsSerializer
+from store.serializers import ProductNameSerializer
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -31,13 +32,14 @@ class FavoriteProductsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        favorite_products = FavoriteProducts.objects.filter(user_profile__user=request.user)
-        serializer = FavoriteProductsSerializer(favorite_products, many=True)
+        favorites = FavoriteProducts.objects.filter(user_profile__user=request.user)
+        products = [item.product for item in favorites]
+        serializer = ProductNameSerializer(products, many=True)
         return Response(serializer.data)
     def post(self, request):
         data = request.data
         user_profile = Profile.objects.get(user=request.user)  # Получаем профиль текущего пользователя
-        serializer = FavoriteProductsSerializer(data={'user_profile': user_profile.id, 'product': data['product_id']})
+        serializer = FavoritesSerializer(data={'user_profile': user_profile.id, 'product': data['product_id']})
         
         if serializer.is_valid():
             serializer.save()
