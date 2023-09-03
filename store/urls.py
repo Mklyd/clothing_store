@@ -9,7 +9,7 @@ from .views import ProductViewSet, MenuViewSet, CollectionViewSet, ColorAndSizes
 
 router = routers.DefaultRouter()
 router.register(r'product', ProductViewSet)
-router.register(r'orders', OrderViewSet)
+# router.register(r'orders', OrderViewSet)
 router.register(r'menu', MenuViewSet)
 router.register(r'category', CategoryViewSet)
 router.register(r'collection', CollectionViewSet)
@@ -22,7 +22,7 @@ urlpatterns = [
          name='yookassa-payment-create'),
     # path('confirm-payment/', PaymentConfirmationView.as_view(), name='confirm-payment'),
     # path('cancel-payment/', PaymentCancellationView.as_view(), name='cancel-payment'),
-    path('orders/', OrderViewSet.as_view({'get': 'list'}), name='order-list'),
+    path('orders/', OrderViewSet.as_view(), name='order-list'),
     path('', include(router.urls))
 ]
 if settings.DEBUG:

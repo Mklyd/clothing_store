@@ -14,6 +14,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter, Filter
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 
 from django.db.models import Count
 
@@ -39,9 +40,13 @@ class ColorAndSizesViewSet(viewsets.ViewSet):
         return Response(data)
 
 
-class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all()
-    serializer_class = OrderSerializer
+class OrderViewSet(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        orders = Order.objects.filter(user__user = request.user)
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data)
 
 
 class ProductColorViewSet(viewsets.ModelViewSet):
@@ -270,8 +275,9 @@ class YookassaPaymentCreateAPIView(APIView):
                 courier_comment=courier_comment
             )
         else:
+            user_profile = Profile.objects.get(user=request.user)
             order = Order.objects.create(
-                user=user,
+                user=user_profile,
                 status='created',
                 amount=total_amount,
                 order_number=order_number,

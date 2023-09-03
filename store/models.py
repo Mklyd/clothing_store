@@ -231,7 +231,7 @@ class Order(models.Model):
         max_length=10, unique=True, editable=False, null=True)
     payment_record = models.OneToOneField(
         'PaymentRecord', on_delete=models.CASCADE, related_name='order_record_order', null=True)
-    user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True, blank=True)
     products = models.ManyToManyField(Product, through='OrderItem')
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
