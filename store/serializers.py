@@ -237,7 +237,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
-
+    products = ProductNameSerializer(many=True)
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:

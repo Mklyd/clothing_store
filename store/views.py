@@ -5,6 +5,7 @@ from django.core.mail import send_mail
 import string
 import random
 from .models import Order, OrderItem, PaymentRecord
+from profiles_app.models import Profile
 from yookassa import Configuration, Payment
 from rest_framework.views import APIView
 from django.conf import settings
@@ -215,10 +216,6 @@ class HomePageViewSet(viewsets.ModelViewSet):
             'collections_with_products': collections_data
         }
         return Response(data)
-
-
-
-
 
 
 def generate_order_number():
