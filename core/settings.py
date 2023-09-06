@@ -31,7 +31,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -48,10 +47,11 @@ INSTALLED_APPS = [
     'colorfield',
     'django_filters',
     "corsheaders",
-
+    
     'store',
     'users_app',
     'profiles_app',
+    
 ]
 
 MIDDLEWARE = [

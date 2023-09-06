@@ -92,7 +92,7 @@ class ProductFilter(FilterSet):
     size = CharFilter(field_name='productcolors__size__name',
                       lookup_expr='exact', label='Размер')
     color = CharFilter(field_name='productcolors__color__color_name',
-                       lookup_expr='exact', label='Цвет')
+                       lookup_expr='exact', label='Цвет', distinct=True)
     product = CharFilter(field_name='product_name',
                          lookup_expr='icontains', label='Название продукта')
     collection = CharFilter(field_name='collection__collection_name',

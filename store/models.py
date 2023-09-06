@@ -258,7 +258,9 @@ class Order(models.Model):
         max_length=10, verbose_name='Индекс', null=True)
     courier_comment = models.TextField(
         verbose_name='Комментарий для курьера', blank=True, null=True)
-
+    delivery_date = models.DateField(
+        verbose_name='Дата доставки', null=True, blank=True)
+    website_url = models.URLField(verbose_name='Ссылка на сайт', blank=True, null=True)
     class Meta:
         verbose_name_plural = 'Заказы'
         verbose_name = 'Заказ'
