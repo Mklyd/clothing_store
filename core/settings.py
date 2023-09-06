@@ -165,7 +165,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 9
 }
+
 
 SIMPLE_JWT = {
    'SIGNING_KEY': 'django-insecure-njv7%gq0g-rf$o(u+pzrrydfsj3qq*r=sti*q_2h92&7t@eeim',

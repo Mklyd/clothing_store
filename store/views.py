@@ -23,13 +23,9 @@ from .models import Product, Collection, Menu, ProductColor, Size, Category, Pro
 from .serializers import ProductSerializer, CollectionSerializer, MenuSerializer, CategorySerializer, HomePageSerializer, RelatedProductSerializer, CollectionNameSerializer, ProductNameSerializer, ProductColorSerializer, OrderSerializer
 
 
-class MyCustomPagination(PageNumberPagination):
-    page_size = 9  # Количество элементов на одной странице
-    # Параметр запроса для указания количества элементов на странице
-    page_size_query_param = 'page_size'
-
-
 class ColorAndSizesViewSet(viewsets.ViewSet):
+    pagination_class = None
+
     def list(self, request):
         colors = Color.objects.values(
             'id', 'color_hex', 'color_name').distinct()
@@ -42,6 +38,8 @@ class ColorAndSizesViewSet(viewsets.ViewSet):
 
 
 class OrderViewSet(APIView):
+    pagination_class = None
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -51,21 +49,29 @@ class OrderViewSet(APIView):
 
 
 class ProductColorViewSet(viewsets.ModelViewSet):
+    pagination_class = None
+
     serializer_class = ProductColorSerializer
     queryset = ProductColor.objects.all()
 
 
 class MenuViewSet(viewsets.ModelViewSet):
+    pagination_class = None
+
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    pagination_class = None
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
+    pagination_class = None
+
     queryset = Collection.objects.all().prefetch_related('images')
     serializer_class = CollectionSerializer
 
@@ -170,6 +176,8 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 class HomePageViewSet(viewsets.ModelViewSet):
+    pagination_class = None
+
     serializer_class = HomePageSerializer
 
     def list(self, request):

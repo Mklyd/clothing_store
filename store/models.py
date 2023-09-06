@@ -261,6 +261,7 @@ class Order(models.Model):
     delivery_date = models.DateField(
         verbose_name='Дата доставки', null=True, blank=True)
     website_url = models.URLField(verbose_name='Ссылка на сайт', blank=True, null=True)
+    track_number = models.CharField(verbose_name='Трек номер', null=True, max_length=100)
     class Meta:
         verbose_name_plural = 'Заказы'
         verbose_name = 'Заказ'
